@@ -1,3 +1,10 @@
+% Grupos de medios de comunicacion
+vocento.
+prisa.
+mediaset.
+unidadEditorial.
+planeta.
+atresmedia.
 
 % Medios de comunicacion
 elPais.
@@ -12,12 +19,26 @@ laSexta.
 tele5.
 cuatro.
 
+% Partidos politicos
+psoe.
+pp.
+vox.
+podemos.
+ciudadanos.
+
 % Lideres politicos
 pedroSanchez.
 pabloCasado.
 santiagoAbascal.
 pabloIglesias.
 inesArrimadas.
+
+% Posiciones politicas
+extremaIzquierda.
+izquierda.
+centro.
+derecha.
+extremaDerecha.
 
 % IDs medios
 idMedio(1, elPais).
@@ -45,6 +66,51 @@ textoMedio(laSexta, 'La Sexta').
 textoMedio(tele5, 'Telecinco').
 textoMedio(cuatro, 'Cuatro').
 
+% Medio es del grupo
+esDelGrupo(elPais, prisa).
+esDelGrupo(cadenaSer, prisa).
+esDelGrupo(abc, vocento).
+esDelGrupo(cope, vocento).
+esDelGrupo(elMundo, unidadEditorial).
+esDelGrupo(laRazon, planeta).
+esDelGrupo(ondaCero, atresmedia).
+esDelGrupo(antena3, atresmedia).
+esDelGrupo(laSexta, atresmedia).
+esDelGrupo(tele5, atresmedia).
+esDelGrupo(cuatro, atresmedia).
+
+% Posicion del grupo
+posicionGrupo(vocento, derecha).
+posicionGrupo(unidadEditorial, derecha).
+posicionGrupo(prisa, centro).
+posicionGrupo(mediaset, centro).
+posicionGrupo(planeta, izquierda).
+posicionGrupo(atresmedia, izquierda).
+
+% Television
+television(tele5).
+televison(cuatro).
+televison(antena3).
+televison(laSexta).
+
+% Radio
+radio(cope).
+radio(cadenaSer).
+radio(ondaCero).
+
+% Prensa
+prensa(abc).
+prensa(elPais).
+prensa(elMundo).
+prensa(laRazon).
+
+% Lider por partido
+lider(pedroSanchez, psoe).
+lider(pabloCasado, pp).
+lider(santiagoAbascal, vox).
+lider(pabloIglesias, podemos).
+lider(inesArrimadas, ciudadanos).
+
 % IDs Politicos
 idPolitico(1, pedroSanchez).
 idPolitico(2, pabloCasado).
@@ -59,6 +125,17 @@ textoPolitico(santiagoAbascal, 'Santiago Abascal').
 textoPolitico(pabloIglesias, 'Pablo Iglesias').
 textoPolitico(inesArrimadas, 'Ines Arrimadas').
 
+% Posicion del partido
+posicionPartido(psoe, izquierda).
+posicionPartido(psoe, centro).
+posicionPartido(pp, centro).
+posicionPartido(pp, derecha).
+posicionPartido(vox, derecha).
+posicionPartido(vox, extremaDerecha).
+posicionPartido(podemos, extremaIzquierda).
+posicionPartido(podemos, izquierda).
+posicionPartido(ciudadanos, centro).
+
 % Pregunta politicas
 preguntasPoliticas([
 	'Pregunta 1',
@@ -70,7 +147,6 @@ preguntasPoliticas([
 tipoRespuesta(1, 'Positiva').
 tipoRespuesta(2, 'Neutral').
 tipoRespuesta(3, 'Negativa').
-tipoRespuesta(4, 'Aleatoria').
 
 %Predicado dinamico para preguntas historicas
 :-dynamic historicoPreguntas/1, preguntasPosibles/1.
@@ -82,7 +158,7 @@ clearScreen :- write('\33[2J').
 
 %predicado
 texto_medio_entrevista :- 
-		write('Introduzca el medio que realizara la entrevista:'),nl,
+		write('Introduzca el medio que realizara la entrevista:\n'),
 		write('\n'),
 		write('1.El Pais\n'),
         write('2.Cadena Ser\n'),
@@ -98,7 +174,7 @@ texto_medio_entrevista :-
 	
 %predicado	
 texto_politico_entrevista :- 
-		write('\nIntroduzca el politico que realizara la entrevista:'),nl,
+		write('\nIntroduzca el politico que realizara la entrevista:\n'),
 		write('\n'),
 		write('1.Pedro Sanchez\n'),
         write('2.Pablo Casado\n'),
@@ -121,9 +197,11 @@ inicioEntrevista(ID_MEDIO, ID_POLITICO) :-
 		format("\nBienvenidos a ~w.", [TEXTO_MEDIO]), 
 		idPolitico(ID_POLITICO, POLITICO),
 		textoPolitico(POLITICO, TEXTO_POLITICO), !,
-		format(" Hoy vamos a realizar la entrevista a ~w.", [TEXTO_POLITICO]),nl,
+		format(" Hoy vamos a realizar la entrevista a ~w.\n", [TEXTO_POLITICO]),
 		inicioPreguntas(PuntuacionEntrevista),
-		format("La puntuacion de la entrevista ha sido: ~w\n.", [PuntuacionEntrevista]).
+		maquillarEntrevista(POLITICO, MEDIO, PuntuacionExtra),
+		calcularPuntuacionFinal(PuntuacionEntrevista, PuntuacionExtra, PuntuacionFinal),
+		format("\nLa puntuacion final es de: ~w. \n", [PuntuacionFinal]).
 
 % Inicia la rueda de preguntas
 inicioPreguntas(PuntuacionEntrevista) :-
@@ -135,7 +213,7 @@ inicioPreguntas(PuntuacionEntrevista) :-
 		PuntuacionEntrevista is div(PuntuacionTotal, NumPreguntas).
 
 % Preguntas recursivas acumulando el resultado
-lanzarPregunta(0, 0) :- write('\n\nSe acabaron las preguntas por hoy.\n'), !.
+lanzarPregunta(0, 0) :- write('\nSe acabaron las preguntas por hoy.\n'), !.
 lanzarPregunta(NumPreguntas, PuntuacionTotal) :-
 		NumPreguntas > 0, 
 		preguntasPosibles(PREGUNTAS_POSIBLES),
@@ -207,7 +285,7 @@ removeElement(X, [Y|Ys], [Y|Zs]):- removeElement(X, Ys, Zs).
 
 % Imprime por pantalla el historico de preguntas realizadas
 verPreguntasRealizadas:-
-		write('Estas son las preguntas realizadas:'), nl,
+		write('Estas son las preguntas realizadas:\n'),
 		historicoPreguntas(Q),
 		imprimirPreguntas(Q), nl, !.
 
@@ -220,3 +298,17 @@ verPreguntasPosibles:-
 		write('Estas son las preguntas posibles a realizar:'), nl,
 		preguntasPosibles(Q),
 		imprimirPreguntas(Q), nl, !.
+
+esAfin(LIDER_POLITICO, MEDIO_COMUNICACION) :-
+		lider(LIDER_POLITICO, PARTIDO_POLITICO),
+		posicionPartido(PARTIDO_POLITICO, POSICION_PARTIDO),
+		esDelGrupo(MEDIO_COMUNICACION, GRUPO_COMUNICACION),
+		posicionGrupo(GRUPO_COMUNICACION, POSICION_GRUPO),
+		POSICION_PARTIDO == POSICION_GRUPO.
+
+maquillarEntrevista(POLITICO, MEDIO, PUNTUACION_EXTRA) :-
+		esAfin(POLITICO, MEDIO), random(1, 20, Index), PUNTUACION_EXTRA is Index, !;
+		esAfin(POLITICO, _), random(1, 20, Index), PUNTUACION_EXTRA is -1 * Index, !.
+
+calcularPuntuacionFinal(PUNTUACION_ENTREVISTA, PUNTUACION_EXTRA, PuntuacionFinal) :-
+		PuntuacionFinal is PUNTUACION_ENTREVISTA + PUNTUACION_EXTRA.
