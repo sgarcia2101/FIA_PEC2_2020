@@ -66,6 +66,12 @@ preguntasPoliticas([
 	'Pregunta 3', 
 	'Pregunta 4']).
 
+% Tipos de respuesta
+tipoRespuesta(1, 'Positiva').
+tipoRespuesta(2, 'Neutral').
+tipoRespuesta(3, 'Negativa').
+tipoRespuesta(4, 'Aleatoria').
+
 %Predicado dinamico para preguntas historicas
 :-dynamic historicoPreguntas/1, preguntasPosibles/1.
 historicoPreguntas([]).
@@ -116,27 +122,42 @@ inicioEntrevista(ID_MEDIO, ID_POLITICO) :-
 		idPolitico(ID_POLITICO, POLITICO),
 		textoPolitico(POLITICO, TEXTO_POLITICO), !,
 		format(" Hoy vamos a realizar la entrevista a ~w.", [TEXTO_POLITICO]),nl,
-		write('\n'),
-		inicioPreguntas().
+		inicioPreguntas(PuntuacionEntrevista),
+		format("La puntuacion de la entrevista ha sido: ~w\n.", [PuntuacionEntrevista]).
 
 % Inicia la rueda de preguntas
-inicioPreguntas() :-
+inicioPreguntas(PuntuacionEntrevista) :-
 		inicializarPreguntasRealizadas(),
 		inicializarPreguntasPosibles(),
 		% elegir el numero de preguntas
-		obtenerNumeroDePreguntas(Index),
-		lanzarPregunta(Index).
+		obtenerNumeroDePreguntas(NumPreguntas),
+		lanzarPregunta(NumPreguntas, PuntuacionTotal),
+		PuntuacionEntrevista is div(PuntuacionTotal, NumPreguntas).
 
-lanzarPregunta(Index) :-
-		Index == 0, 
-			write('Se acabaron las preguntas por hoy.\n');
-		Index > 0, 
-			preguntasPosibles(PREGUNTAS_POSIBLES),
-			eleccionAleatoria(PREGUNTAS_POSIBLES, TEXTO_PREGUNTA),
-			format("Pregunta: ~w \n", [TEXTO_PREGUNTA]),
-			addPreguntaHistorico(TEXTO_PREGUNTA),
-			removePreguntaPosible(TEXTO_PREGUNTA),
-			lanzarPregunta(Index-1).
+% Preguntas recursivas acumulando el resultado
+lanzarPregunta(0, 0) :- write('\n\nSe acabaron las preguntas por hoy.\n'), !.
+lanzarPregunta(NumPreguntas, PuntuacionTotal) :-
+		NumPreguntas > 0, 
+		preguntasPosibles(PREGUNTAS_POSIBLES),
+		eleccionAleatoria(PREGUNTAS_POSIBLES, TEXTO_PREGUNTA),
+		format("\nPregunta: ~w \n", [TEXTO_PREGUNTA]),
+		addPreguntaHistorico(TEXTO_PREGUNTA),
+		removePreguntaPosible(TEXTO_PREGUNTA),
+		calcularRespuesta(Puntuacion),
+		NumPreguntas1 is NumPreguntas-1,
+		lanzarPregunta(NumPreguntas1, Puntuacion1),
+		PuntuacionTotal is Puntuacion1+Puntuacion.
+
+calcularRespuesta(Puntuacion) :-
+		random(1, 3, Index),
+		tipoRespuesta(Index, TEXTO_RESPUESTA),
+		calcularImpacto(Index, Puntuacion),
+		format("La respuesta ha sido ~w. Puntuacion: ~w/100 \n", [TEXTO_RESPUESTA, Puntuacion]).
+
+calcularImpacto(Id, Puntuacion) :-
+		Id == 1, random(70, 100, Puntuacion);
+		Id == 2, random(30, 70, Puntuacion);
+		Id == 3, random(0, 30, Puntuacion).
 			
 obtenerNumeroDePreguntas(Index) :-
 		preguntasPoliticas(PREGUNTAS_POSIBLES), 
