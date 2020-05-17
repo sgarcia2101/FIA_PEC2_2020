@@ -104,6 +104,11 @@ prensa(elPais).
 prensa(elMundo).
 prensa(laRazon).
 
+% Medio
+medio(A) :- television(A).
+medio(A) :- radio(A).
+medio(A) :- radio(A).
+
 % Politicos
 politico(pedroSanchez).
 politico(pabloCasado).
@@ -148,7 +153,13 @@ preguntasPoliticas([
 	'Pregunta 1',
 	'Pregunta 2', 
 	'Pregunta 3', 
-	'Pregunta 4']).
+	'Pregunta 4', 
+	'Pregunta 5', 
+	'Pregunta 6', 
+	'Pregunta 7', 
+	'Pregunta 8', 
+	'Pregunta 9', 
+	'Pregunta 10']).
 
 % Tipos de respuesta
 tipoRespuesta(1, 'Positiva').
@@ -214,9 +225,7 @@ inicioEntrevista(ID_MEDIO, ID_POLITICO) :-
 		maquillarEntrevista(POLITICO, MEDIO, PuntuacionExtra),
 		calcularPuntuacionFinal(PuntuacionEntrevista, PuntuacionExtra, PuntuacionFinal),
 		format("\nLa puntuacion final es de: ~w. \n", [PuntuacionFinal]),
-		actualizarPuntuacion(POLITICO, PuntuacionFinal),
-		write('\n'),
-		verRanking().
+		actualizarPuntuacion(POLITICO, PuntuacionFinal).
 
 % Inicia la rueda de preguntas
 inicioPreguntas(PuntuacionEntrevista) :-
@@ -242,13 +251,13 @@ lanzarPregunta(NumPreguntas, PuntuacionTotal) :-
 		PuntuacionTotal is Puntuacion1+Puntuacion.
 
 calcularRespuesta(Puntuacion) :-
-		random(1, 3, Index),
+		random(1, 4, Index),
 		tipoRespuesta(Index, TEXTO_RESPUESTA),
 		calcularImpacto(Index, Puntuacion),
 		format("La respuesta ha sido ~w. Puntuacion: ~w/100 \n", [TEXTO_RESPUESTA, Puntuacion]).
 
 calcularImpacto(Id, Puntuacion) :-
-		Id == 1, random(70, 100, Puntuacion);
+		Id == 1, random(70, 101, Puntuacion);
 		Id == 2, random(30, 70, Puntuacion);
 		Id == 3, random(0, 30, Puntuacion).
 			
@@ -322,8 +331,8 @@ esAfin(LIDER_POLITICO, MEDIO_COMUNICACION) :-
 		POSICION_PARTIDO == POSICION_GRUPO.
 
 maquillarEntrevista(POLITICO, MEDIO, PUNTUACION_EXTRA) :-
-		esAfin(POLITICO, MEDIO), random(1, 20, Index), PUNTUACION_EXTRA is Index;
-		esAfin(POLITICO, _), random(1, 20, Index), PUNTUACION_EXTRA is -1 * Index.
+		esAfin(POLITICO, MEDIO), random(0, 21, Index), PUNTUACION_EXTRA is Index;
+		esAfin(POLITICO, _), random(0, 21, Index), PUNTUACION_EXTRA is -1 * Index.
 
 calcularPuntuacionFinal(PUNTUACION_ENTREVISTA, PUNTUACION_EXTRA, PuntuacionFinal) :-
 		(PUNTUACION_ENTREVISTA + PUNTUACION_EXTRA) >= 100, PuntuacionFinal is 100;
@@ -332,10 +341,12 @@ calcularPuntuacionFinal(PUNTUACION_ENTREVISTA, PUNTUACION_EXTRA, PuntuacionFinal
 
 actualizarPuntuacion(POLITICO, PUNTUACION_NEW) :-
 		puntuacion(POLITICO, PuntuacionActual),
-		Puntuacion1 is (PuntuacionActual + PUNTUACION_NEW) / 2,
+		round((PuntuacionActual + PUNTUACION_NEW) / 2, PuntuacionRedondeada, 2),
 		retract(puntuacion(POLITICO,_)),
-		assert(puntuacion(POLITICO, Puntuacion1)),
+		assert(puntuacion(POLITICO, PuntuacionRedondeada)),
 		!.
+
+round(X,Y,D) :- Z is X * 10^D, round(Z, ZA), Y is ZA / 10^D.
 
 % https://stackoverflow.com/questions/56402937/create-a-list-of-key-value-pair
 ranking(Ls) :-
@@ -347,11 +358,21 @@ reverseList([X|Xs], Ys, Zs):- reverseList(Xs, [X|Ys], Zs).
 
 % Imprime por pantalla el historico de preguntas realizadas
 verRanking():-
-		write('Este es el ranking actual de politicos:\n\n'),
+		write('\nEste es el ranking actual de politicos:\n\n'),
 		ranking(LISTA),
 		listarRanking(LISTA), nl, !.
 		
 listarRanking([])     :- write("No existe ranking."), !.
 listarRanking([P|[]]) :- write(P), nl, !.
 listarRanking([P|R])  :- write(P), nl, listarRanking(R).
+
+simulacion(0) :- 
+		write("\nSe acabo la simulacion.\n"),
+		verRanking(), !.
+simulacion(NUMERO_ENTREVISTAS) :-
+		random(1, 12, IdMedio),
+		random(1, 6, IdPolitico),
+		inicioEntrevista(IdMedio, IdPolitico),
+		NUMERO_ENTREVISTAS1 is NUMERO_ENTREVISTAS-1,
+		simulacion(NUMERO_ENTREVISTAS1).
 		
