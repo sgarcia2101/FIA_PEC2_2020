@@ -67,8 +67,9 @@ preguntasPoliticas([
 	'Pregunta 4']).
 
 %Predicado dinamico para preguntas historicas
-:-dynamic historicoPreguntas/1.
+:-dynamic historicoPreguntas/1, preguntasPosibles/1.
 historicoPreguntas([]).
+preguntasPosibles([]).
 
 %predicado que limpia la pantalla
 clearScreen :- write('\33[2J').
@@ -111,18 +112,36 @@ entrevista:- clearScreen,
 inicioEntrevista(ID_MEDIO, ID_POLITICO) :- 
 		idMedio(ID_MEDIO, MEDIO),
 		textoMedio(MEDIO, TEXTO_MEDIO), !,
-		format("\n Bienvenidos a ~w.", [TEXTO_MEDIO]), 
+		format("\nBienvenidos a ~w.", [TEXTO_MEDIO]), 
 		idPolitico(ID_POLITICO, POLITICO),
 		textoPolitico(POLITICO, TEXTO_POLITICO), !,
-		format(" Hoy vamos a realizar la entrevista a ~w.", [TEXTO_POLITICO]),
+		format(" Hoy vamos a realizar la entrevista a ~w.", [TEXTO_POLITICO]),nl,
+		write('\n'),
 		inicioPreguntas().
 
 % Inicia la rueda de preguntas
 inicioPreguntas() :-
-		preguntasPoliticas(PREGUNTAS_POSIBLES),
-		eleccionAleatoria(PREGUNTAS_POSIBLES, TEXTO_PREGUNTA),
-		addPreguntaHistorico(TEXTO_PREGUNTA),
-		format("Pregunta: ~w", [TEXTO_PREGUNTA]).
+		inicializarPreguntasRealizadas(),
+		inicializarPreguntasPosibles(),
+		% elegir el numero de preguntas
+		obtenerNumeroDePreguntas(Index),
+		lanzarPregunta(Index).
+
+lanzarPregunta(Index) :-
+		Index == 0, 
+			write('Se acabaron las preguntas por hoy.\n');
+		Index > 0, 
+			preguntasPosibles(PREGUNTAS_POSIBLES),
+			eleccionAleatoria(PREGUNTAS_POSIBLES, TEXTO_PREGUNTA),
+			format("Pregunta: ~w \n", [TEXTO_PREGUNTA]),
+			addPreguntaHistorico(TEXTO_PREGUNTA),
+			removePreguntaPosible(TEXTO_PREGUNTA),
+			lanzarPregunta(Index-1).
+			
+obtenerNumeroDePreguntas(Index) :-
+		preguntasPoliticas(PREGUNTAS_POSIBLES), 
+		length(PREGUNTAS_POSIBLES, Length), 
+		random(1, Length, Index).
 
 % Elige un elemento al azar de la lista 
 eleccionAleatoria(LISTA, ELECCION) :-
@@ -130,20 +149,40 @@ eleccionAleatoria(LISTA, ELECCION) :-
 		random(0, Length, Index),
 		nth0(Index, LISTA, ELECCION).
 
-% Añade una pregunta al historico de preguntas
-%		addPreguntaHistorico(TEXTO_PREGUNTA) :-
-%		historicoPreguntas(X),
-%		addList(TEXTO_PREGUNTA, X, X1),
-%		retract(historicoPreguntas(_)),
-%		assert(historicoPreguntas(X1)).
-
 addPreguntaHistorico(TEXTO_PREGUNTA) :- 
 		retract(historicoPreguntas(X)), 
 		L2=[TEXTO_PREGUNTA|X], 
 		assert(historicoPreguntas(L2)).
 
+inicializarPreguntasRealizadas() :-
+    retract(historicoPreguntas(_)),
+    assert(historicoPreguntas([])),
+    !.
+
+inicializarPreguntasPosibles() :-
+    retract(preguntasPosibles(_)),
+	preguntasPoliticas(PREGUNTAS_POSIBLES),
+    assert(preguntasPosibles(PREGUNTAS_POSIBLES)),
+    !.
+
+removePreguntaPosible(TEXTO_PREGUNTA) :-
+		preguntasPosibles(L1),
+		removeElement(TEXTO_PREGUNTA, L1, L2),
+		retract(preguntasPosibles(_)),
+		assert(preguntasPosibles(L2)),
+		!.
+
+addPreguntasPosibles(LIST) :- 
+		preguntasPosibles(L1),
+		retractAll(L1), 
+		L2=[LIST|L1], 
+		assert(preguntasPosibles(L2)).
+
 % Añade un elemento a una lista
 addList(X,LISTA,[X|LISTA]).
+
+removeElement(X, [X|Xs], Xs).
+removeElement(X, [Y|Ys], [Y|Zs]):- removeElement(X, Ys, Zs).
 
 % Imprime por pantalla el historico de preguntas realizadas
 verPreguntasRealizadas:-
@@ -155,3 +194,8 @@ verPreguntasRealizadas:-
 imprimirPreguntas([])     :- write("No se han realizado preguntas."), !.
 imprimirPreguntas([P|[]]) :- write(P), nl, !.
 imprimirPreguntas([P|R])  :- imprimirPreguntas(R), write(P), nl.
+
+verPreguntasPosibles:-
+		write('Estas son las preguntas posibles a realizar:'), nl,
+		preguntasPosibles(Q),
+		imprimirPreguntas(Q), nl, !.
