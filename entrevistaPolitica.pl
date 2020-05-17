@@ -104,6 +104,13 @@ prensa(elPais).
 prensa(elMundo).
 prensa(laRazon).
 
+% Politicos
+politico(pedroSanchez).
+politico(pabloCasado).
+politico(santiagoAbascal).
+politico(pabloIglesias).
+politico(inesArrimadas).
+
 % Lider por partido
 lider(pedroSanchez, psoe).
 lider(pabloCasado, pp).
@@ -149,9 +156,14 @@ tipoRespuesta(2, 'Neutral').
 tipoRespuesta(3, 'Negativa').
 
 %Predicado dinamico para preguntas historicas
-:-dynamic historicoPreguntas/1, preguntasPosibles/1.
+:-dynamic historicoPreguntas/1, preguntasPosibles/1, puntuacion/2.
 historicoPreguntas([]).
 preguntasPosibles([]).
+puntuacion(pedroSanchez, 50).
+puntuacion(pabloCasado, 50).
+puntuacion(santiagoAbascal, 50).
+puntuacion(pabloIglesias, 50).
+puntuacion(inesArrimadas, 50).
 
 %predicado que limpia la pantalla
 clearScreen :- write('\33[2J').
@@ -201,7 +213,10 @@ inicioEntrevista(ID_MEDIO, ID_POLITICO) :-
 		inicioPreguntas(PuntuacionEntrevista),
 		maquillarEntrevista(POLITICO, MEDIO, PuntuacionExtra),
 		calcularPuntuacionFinal(PuntuacionEntrevista, PuntuacionExtra, PuntuacionFinal),
-		format("\nLa puntuacion final es de: ~w. \n", [PuntuacionFinal]).
+		format("\nLa puntuacion final es de: ~w. \n", [PuntuacionFinal]),
+		actualizarPuntuacion(POLITICO, PuntuacionFinal),
+		write('\n'),
+		verRanking().
 
 % Inicia la rueda de preguntas
 inicioPreguntas(PuntuacionEntrevista) :-
@@ -249,8 +264,8 @@ eleccionAleatoria(LISTA, ELECCION) :-
 		nth0(Index, LISTA, ELECCION).
 
 addPreguntaHistorico(TEXTO_PREGUNTA) :- 
-		retract(historicoPreguntas(X)), 
-		L2=[TEXTO_PREGUNTA|X], 
+		retract(historicoPreguntas(L1)), 
+		L2=[TEXTO_PREGUNTA|L1], 
 		assert(historicoPreguntas(L2)).
 
 inicializarPreguntasRealizadas() :-
@@ -307,8 +322,36 @@ esAfin(LIDER_POLITICO, MEDIO_COMUNICACION) :-
 		POSICION_PARTIDO == POSICION_GRUPO.
 
 maquillarEntrevista(POLITICO, MEDIO, PUNTUACION_EXTRA) :-
-		esAfin(POLITICO, MEDIO), random(1, 20, Index), PUNTUACION_EXTRA is Index, !;
-		esAfin(POLITICO, _), random(1, 20, Index), PUNTUACION_EXTRA is -1 * Index, !.
+		esAfin(POLITICO, MEDIO), random(1, 20, Index), PUNTUACION_EXTRA is Index;
+		esAfin(POLITICO, _), random(1, 20, Index), PUNTUACION_EXTRA is -1 * Index.
 
 calcularPuntuacionFinal(PUNTUACION_ENTREVISTA, PUNTUACION_EXTRA, PuntuacionFinal) :-
+		(PUNTUACION_ENTREVISTA + PUNTUACION_EXTRA) >= 100, PuntuacionFinal is 100;
+		(PUNTUACION_ENTREVISTA + PUNTUACION_EXTRA) =< 0, PuntuacionFinal is 0;
 		PuntuacionFinal is PUNTUACION_ENTREVISTA + PUNTUACION_EXTRA.
+
+actualizarPuntuacion(POLITICO, PUNTUACION_NEW) :-
+		puntuacion(POLITICO, PuntuacionActual),
+		Puntuacion1 is (PuntuacionActual + PUNTUACION_NEW) / 2,
+		retract(puntuacion(POLITICO,_)),
+		assert(puntuacion(POLITICO, Puntuacion1)),
+		!.
+
+% https://stackoverflow.com/questions/56402937/create-a-list-of-key-value-pair
+ranking(Ls) :-
+    setof(V-K,(politico(K),puntuacion(K,V)),VKs),
+	reverseList(VKs, [], Ls).
+
+reverseList([], Zs, Zs).
+reverseList([X|Xs], Ys, Zs):- reverseList(Xs, [X|Ys], Zs).
+
+% Imprime por pantalla el historico de preguntas realizadas
+verRanking():-
+		write('Este es el ranking actual de politicos:\n\n'),
+		ranking(LISTA),
+		listarRanking(LISTA), nl, !.
+		
+listarRanking([])     :- write("No existe ranking."), !.
+listarRanking([P|[]]) :- write(P), nl, !.
+listarRanking([P|R])  :- write(P), nl, listarRanking(R).
+		
