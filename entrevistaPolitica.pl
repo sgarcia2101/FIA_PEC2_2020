@@ -166,20 +166,32 @@ tipoRespuesta(1, 'Positiva').
 tipoRespuesta(2, 'Neutral').
 tipoRespuesta(3, 'Negativa').
 
-%Predicado dinamico para preguntas historicas
-:-dynamic historicoPreguntas/1, preguntasPosibles/1, puntuacion/2.
+% Predicados dinamicos para almacenar preguntas realizadas para no repetir preguntas
+:-dynamic historicoPreguntas/1, preguntasPosibles/1.
 historicoPreguntas([]).
 preguntasPosibles([]).
+
+% Predicado dinamico para el almacenamiento de la puntuacion de politicos
+:-dynamic puntuacion/2.
 puntuacion(pedroSanchez, 50).
 puntuacion(pabloCasado, 50).
 puntuacion(santiagoAbascal, 50).
 puntuacion(pabloIglesias, 50).
 puntuacion(inesArrimadas, 50).
 
-%predicado que limpia la pantalla
+% Predicado que limpia la pantalla
 clearScreen :- write('\33[2J').
 
-%predicado
+% Inicio del programa
+entrevista:- clearScreen, 
+		texto_medio_entrevista,
+		read(ID_MEDIO),
+		texto_politico_entrevista,
+		read(ID_POLITICO),
+		clearScreen,
+		inicioEntrevista(ID_MEDIO, ID_POLITICO).
+
+% Predicado para mostrar texto de eleccion del medio de comunicacion
 texto_medio_entrevista :- 
 		write('Introduzca el medio que realizara la entrevista:\n'),
 		write('\n'),
@@ -195,7 +207,7 @@ texto_medio_entrevista :-
         write('10.Tele5\n'),
         write('11.Cuatro\n').
 	
-%predicado	
+% Predicado	para mostrar el texto de eleccion del politico
 texto_politico_entrevista :- 
 		write('\nIntroduzca el politico que realizara la entrevista:\n'),
 		write('\n'),
@@ -205,15 +217,11 @@ texto_politico_entrevista :-
         write('4.Pablo Iglesias\n'),
         write('5.Ines Arrimadas\n').
 
-entrevista:- clearScreen, 
-		texto_medio_entrevista,
-		read(ID_MEDIO),
-		texto_politico_entrevista,
-		read(ID_POLITICO),
-		clearScreen,
-		inicioEntrevista(ID_MEDIO, ID_POLITICO).
-
-% Inicia la entrevista de un medio a un politico
+% Inicia la entrevista de un medio a un politico. Consiste en realizar unas preguntas al azar, 
+% el politico las prodra contestar con mas o menos acierto, por lo que la repercusion de la respuesta puede variar.
+% Una vez realizada la entrevista, dependiendo de la afinidad con el politico, 
+% el medio puede maquillar la entrevista positivamente o negativamente.
+% Finalmente se actualiza la puntuacion en el ranking.
 inicioEntrevista(ID_MEDIO, ID_POLITICO) :- 
 		idMedio(ID_MEDIO, MEDIO),
 		textoMedio(MEDIO, TEXTO_MEDIO), !,
@@ -227,7 +235,8 @@ inicioEntrevista(ID_MEDIO, ID_POLITICO) :-
 		format("\nLa puntuacion final es de: ~w. \n", [PuntuacionFinal]),
 		actualizarPuntuacion(POLITICO, PuntuacionFinal).
 
-% Inicia la rueda de preguntas
+% Inicia la rueda de preguntas. Se seleccionan x preguntas al azar. 
+% Se calcula la media de las puntuaciones de cada pregunta, lo que dara la puntuacion de la entrevista.
 inicioPreguntas(PuntuacionEntrevista) :-
 		inicializarPreguntasRealizadas(),
 		inicializarPreguntasPosibles(),
@@ -236,7 +245,28 @@ inicioPreguntas(PuntuacionEntrevista) :-
 		lanzarPregunta(NumPreguntas, PuntuacionTotal),
 		PuntuacionEntrevista is div(PuntuacionTotal, NumPreguntas).
 
-% Preguntas recursivas acumulando el resultado
+% Se borran las preguntas realizadas al iniciar la entrevista
+inicializarPreguntasRealizadas() :-
+    retract(historicoPreguntas(_)),
+    assert(historicoPreguntas([])),
+    !.
+
+% Se inicializan las preguntas a todas las posibles 
+inicializarPreguntasPosibles() :-
+    retract(preguntasPosibles(_)),
+	preguntasPoliticas(PREGUNTAS_POSIBLES),
+    assert(preguntasPosibles(PREGUNTAS_POSIBLES)),
+    !.
+
+% Se elige el numero de preguntas a realizar al azar 	
+obtenerNumeroDePreguntas(Index) :-
+		preguntasPoliticas(PREGUNTAS_POSIBLES), 
+		length(PREGUNTAS_POSIBLES, Length), 
+		random(1, Length, Index).
+
+% Se realizan las preguntas recursivamente acumulando el resultado total.
+% El proceso consiste en elegir una de las preguntas posibles, sin repetir.
+% Luego, el politico puede contestar mas o menos acertadamente, lo que le dara una puntuacion a esa pregunta.
 lanzarPregunta(0, 0) :- write('\nSe acabaron las preguntas por hoy.\n'), !.
 lanzarPregunta(NumPreguntas, PuntuacionTotal) :-
 		NumPreguntas > 0, 
@@ -250,79 +280,51 @@ lanzarPregunta(NumPreguntas, PuntuacionTotal) :-
 		lanzarPregunta(NumPreguntas1, Puntuacion1),
 		PuntuacionTotal is Puntuacion1+Puntuacion.
 
-calcularRespuesta(Puntuacion) :-
-		random(1, 4, Index),
-		tipoRespuesta(Index, TEXTO_RESPUESTA),
-		calcularImpacto(Index, Puntuacion),
-		format("La respuesta ha sido ~w. Puntuacion: ~w/100 \n", [TEXTO_RESPUESTA, Puntuacion]).
-
-calcularImpacto(Id, Puntuacion) :-
-		Id == 1, random(70, 101, Puntuacion);
-		Id == 2, random(30, 70, Puntuacion);
-		Id == 3, random(0, 30, Puntuacion).
-			
-obtenerNumeroDePreguntas(Index) :-
-		preguntasPoliticas(PREGUNTAS_POSIBLES), 
-		length(PREGUNTAS_POSIBLES, Length), 
-		random(1, Length, Index).
-
 % Elige un elemento al azar de la lista 
 eleccionAleatoria(LISTA, ELECCION) :-
 		length(LISTA, Length),
 		random(0, Length, Index),
 		nth0(Index, LISTA, ELECCION).
 
+% Añade la pregunta realizada al historico
 addPreguntaHistorico(TEXTO_PREGUNTA) :- 
 		retract(historicoPreguntas(L1)), 
 		L2=[TEXTO_PREGUNTA|L1], 
 		assert(historicoPreguntas(L2)).
 
-inicializarPreguntasRealizadas() :-
-    retract(historicoPreguntas(_)),
-    assert(historicoPreguntas([])),
-    !.
-
-inicializarPreguntasPosibles() :-
-    retract(preguntasPosibles(_)),
-	preguntasPoliticas(PREGUNTAS_POSIBLES),
-    assert(preguntasPosibles(PREGUNTAS_POSIBLES)),
-    !.
-
+% Elimina la pregunta realizada de las posibles
 removePreguntaPosible(TEXTO_PREGUNTA) :-
 		preguntasPosibles(L1),
 		removeElement(TEXTO_PREGUNTA, L1, L2),
 		retract(preguntasPosibles(_)),
-		assert(preguntasPosibles(L2)),
-		!.
-
-addPreguntasPosibles(LIST) :- 
-		preguntasPosibles(L1),
-		retractAll(L1), 
-		L2=[LIST|L1], 
 		assert(preguntasPosibles(L2)).
 
-% Añade un elemento a una lista
-addList(X,LISTA,[X|LISTA]).
-
+% Elimina un elemento de la lista
 removeElement(X, [X|Xs], Xs).
 removeElement(X, [Y|Ys], [Y|Zs]):- removeElement(X, Ys, Zs).
 
-% Imprime por pantalla el historico de preguntas realizadas
-verPreguntasRealizadas:-
-		write('Estas son las preguntas realizadas:\n'),
-		historicoPreguntas(Q),
-		imprimirPreguntas(Q), nl, !.
+% Elige una de las respuestas al azar y se calcula la puntuacion en base al tipo de respuesta elegida.
+calcularRespuesta(Puntuacion) :-
+		random(1, 4, Index),
+		tipoRespuesta(Index, TEXTO_RESPUESTA),
+		calcularPuntuacion(Index, Puntuacion),
+		format("La respuesta ha sido ~w. Puntuacion: ~w/100 \n", [TEXTO_RESPUESTA, Puntuacion]).
 
-% Predicado recursivo, imprime la lista de preguntas realizadas
-imprimirPreguntas([])     :- write("No se han realizado preguntas."), !.
-imprimirPreguntas([P|[]]) :- write(P), nl, !.
-imprimirPreguntas([P|R])  :- imprimirPreguntas(R), write(P), nl.
+% Existen 3 tipos: Neutral, Positiva y Negativa. Cada una de ellas te puede dar una puntuacion al azar.
+calcularPuntuacion(Id, Puntuacion) :-
+		Id == 1, random(70, 101, Puntuacion);
+		Id == 2, random(30, 70, Puntuacion);
+		Id == 3, random(0, 30, Puntuacion).
 
-verPreguntasPosibles:-
-		write('Estas son las preguntas posibles a realizar:'), nl,
-		preguntasPosibles(Q),
-		imprimirPreguntas(Q), nl, !.
+% Se maquilla la puntuacion de la entrevista en base a la afinidad del medio de comunicacion con el lider politico.
+% La variacion es entre un -20% y un +20%.
+maquillarEntrevista(POLITICO, MEDIO, PUNTUACION_EXTRA) :-
+		esAfin(POLITICO, MEDIO), random(0, 21, Index), PUNTUACION_EXTRA is Index;
+		esAfin(POLITICO, _), random(0, 21, Index), PUNTUACION_EXTRA is -1 * Index.
 
+% Se calcula la afinidad del politico con el medio de comunicacion.
+% Se consulta si la posicion politica del grupo al que pertenece el medio de comunicacion 
+% coincide con alguna de las posiciones del partido politico al que pertenece el lider entrevistado.
 esAfin(LIDER_POLITICO, MEDIO_COMUNICACION) :-
 		lider(LIDER_POLITICO, PARTIDO_POLITICO),
 		posicionPartido(PARTIDO_POLITICO, POSICION_PARTIDO),
@@ -330,15 +332,14 @@ esAfin(LIDER_POLITICO, MEDIO_COMUNICACION) :-
 		posicionGrupo(GRUPO_COMUNICACION, POSICION_GRUPO),
 		POSICION_PARTIDO == POSICION_GRUPO.
 
-maquillarEntrevista(POLITICO, MEDIO, PUNTUACION_EXTRA) :-
-		esAfin(POLITICO, MEDIO), random(0, 21, Index), PUNTUACION_EXTRA is Index;
-		esAfin(POLITICO, _), random(0, 21, Index), PUNTUACION_EXTRA is -1 * Index.
-
+% Se calcula la puntuacion final, sumando la puntuacion de la entrevista con la variacion que introduce el medio de comunicacion.
+% En caso de salirse del rango [0, 100], se ajusta.
 calcularPuntuacionFinal(PUNTUACION_ENTREVISTA, PUNTUACION_EXTRA, PuntuacionFinal) :-
 		(PUNTUACION_ENTREVISTA + PUNTUACION_EXTRA) >= 100, PuntuacionFinal is 100;
 		(PUNTUACION_ENTREVISTA + PUNTUACION_EXTRA) =< 0, PuntuacionFinal is 0;
 		PuntuacionFinal is PUNTUACION_ENTREVISTA + PUNTUACION_EXTRA.
 
+% Se actualiza la puntuacion en la variable dinamica del politico correspondiente.
 actualizarPuntuacion(POLITICO, PUNTUACION_NEW) :-
 		puntuacion(POLITICO, PuntuacionActual),
 		round((PuntuacionActual + PUNTUACION_NEW) / 2, PuntuacionRedondeada, 2),
@@ -346,33 +347,61 @@ actualizarPuntuacion(POLITICO, PUNTUACION_NEW) :-
 		assert(puntuacion(POLITICO, PuntuacionRedondeada)),
 		!.
 
+% Redondeo de dos decimales.
+% Fuente: https://stackoverflow.com/questions/52979922/prolog-how-to-round-decimals-of-floating-point-numbers
 round(X,Y,D) :- Z is X * 10^D, round(Z, ZA), Y is ZA / 10^D.
 
-% https://stackoverflow.com/questions/56402937/create-a-list-of-key-value-pair
+% Se obtiene una lista clave-valor con la puntuacion de cada politico ordenado de mayor a menor.
+% Fuente: https://stackoverflow.com/questions/56402937/create-a-list-of-key-value-pair
 ranking(Ls) :-
     setof(V-K,(politico(K),puntuacion(K,V)),VKs),
 	reverseList(VKs, [], Ls).
 
+% Invierte una lista
 reverseList([], Zs, Zs).
 reverseList([X|Xs], Ys, Zs):- reverseList(Xs, [X|Ys], Zs).
 
-% Imprime por pantalla el historico de preguntas realizadas
+% FUNCIONES AUXILIARES
+
+% Imprime por pantalla el historico de preguntas realizadas en la ultima entrevista.
+verPreguntasRealizadas:-
+		write('Estas son las preguntas realizadas:\n'),
+		historicoPreguntas(Q),
+		imprimirPreguntas(Q), nl, !.
+
+% Imprime por pantalla las preguntas que aun no se han realizado en la ultima entrevista.
+verPreguntasPosibles:-
+		write('Estas son las preguntas posibles a realizar:'), nl,
+		preguntasPosibles(Q),
+		imprimirPreguntas(Q), nl, !.
+
+% Predicado recursivo, imprime la lista de preguntas
+imprimirPreguntas([])     :- write("No se han realizado preguntas."), !.
+imprimirPreguntas([P|[]]) :- write(P), nl, !.
+imprimirPreguntas([P|R])  :- imprimirPreguntas(R), write(P), nl.
+
+% Imprime por pantalla la lista del ranking
 verRanking():-
 		write('\nEste es el ranking actual de politicos:\n\n'),
 		ranking(LISTA),
 		listarRanking(LISTA), nl, !.
-		
+
+% Imprime los elementos de la lista
 listarRanking([])     :- write("No existe ranking."), !.
 listarRanking([P|[]]) :- write(P), nl, !.
 listarRanking([P|R])  :- write(P), nl, listarRanking(R).
 
-simulacion(0) :- 
-		write("\nSe acabo la simulacion.\n"),
-		verRanking(), !.
+% Se ha creado esta funcion con el objetivo de simular X numero de entrevistas.
+% Se elige un politico y un medio al azar en cada iteraccion.
+simulacion(0) :- write("\nSe acabo la simulacion.\n"),	verRanking(), !.
 simulacion(NUMERO_ENTREVISTAS) :-
 		random(1, 12, IdMedio),
 		random(1, 6, IdPolitico),
 		inicioEntrevista(IdMedio, IdPolitico),
 		NUMERO_ENTREVISTAS1 is NUMERO_ENTREVISTAS-1,
 		simulacion(NUMERO_ENTREVISTAS1).
+		
+		
+		
+		
 		
