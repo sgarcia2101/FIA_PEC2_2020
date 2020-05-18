@@ -168,17 +168,17 @@ posicionPartido(ciudadanos, centro).
 
 % Pregunta politicas
 preguntasPoliticas([
-	"Â¿QuÃ© protocolos tiene su partido ante un apocalipsis zombie?",
-	"Â¿QuÃ© mÃ©ritos policiales han hecho merecedor al Cristo de la Buena Muerte de esta medalla? Â¿AcudirÃ¡ el Cristo de la Buena Muerte a recoger dicha condecoraciÃ³n?", 
-	"Â¿Cuanto peor mejor para todos y cuanto peor para todos mejor, mejor para mÃ­ el suyo. Beneficio polÃ­tico?", 
-	"DespuÃ©s del impactante caso del barco de PiolÃ­n, Â¿le ha comunicado al Gobierno los policÃ­as si han visto un lindo gatito por sus pasillos?", 
-	"Â¿Comparte su partido la opiniÃ³n del autor sobre que la manzana de AdÃ¡n y Eva debiÃ³ ser un albaricoquero, un naranjo amargo, un pomelo o un membrillero, ya que el manzano no es originario de Palestina ni parece que exista asilvestrado en sus montes?", 
-	"Â¿Piensa interrogar la Guardia Civil a mÃ¡s jÃ³venes como supuestos miembros del harrypotiano EjÃ©rcito del FÃ©nix?", 
-	"Â¿Tiene prevista alguna medida su partido para que el bacalao capturado por la flota espaÃ±ola no se sienta discriminado con el de otros paÃ­ses?", 
-	"Â¿QuÃ© reflexiones personales le han llevado a concluir que el Gobierno de EspaÃ±a debe ser llamado Gobierno de EspaÃ±a?", 
-	"Â¿Cree el Gobierno que la pelÃ­cula 'A las mujeres les gusta la legiÃ³n' representa los valores de su partido?", 
-	"Â¿Tiene presente su partido que se entiende 'Si no tienes vino puedes ir, de verdad, a tomar venganza a tu Ayuntamiento'?",
-	"Â¿Considera su partido que las respuestas que da a las preguntas son ajustadas a lo que se pregunta?"]).
+	"¿Qué protocolos tiene su partido ante un apocalipsis zombie?",
+	"¿Qué méritos policiales han hecho merecedor al Cristo de la Buena Muerte de esta medalla? ¿Acudirá el Cristo de la Buena Muerte a recoger dicha condecoración?", 
+	"¿Cuanto peor mejor para todos y cuanto peor para todos mejor, mejor para mí el suyo. Beneficio político?", 
+	"Después del impactante caso del barco de Piolín, ¿le ha comunicado al Gobierno los policías si han visto un lindo gatito por sus pasillos?", 
+	"¿Comparte su partido la opinión del autor sobre que la manzana de Adán y Eva debió ser un albaricoquero, un naranjo amargo, un pomelo o un membrillero, ya que el manzano no es originario de Palestina ni parece que exista asilvestrado en sus montes?", 
+	"¿Piensa interrogar la Guardia Civil a más jóvenes como supuestos miembros del harrypotiano Ejército del Fénix?", 
+	"¿Tiene prevista alguna medida su partido para que el bacalao capturado por la flota española no se sienta discriminado con el de otros países?", 
+	"¿Qué reflexiones personales le han llevado a concluir que el Gobierno de España debe ser llamado Gobierno de España?", 
+	"¿Cree el Gobierno que la película 'A las mujeres les gusta la legión' representa los valores de su partido?", 
+	"¿Tiene presente su partido que se entiende 'Si no tienes vino puedes ir, de verdad, a tomar venganza a tu Ayuntamiento'?",
+	"¿Considera su partido que las respuestas que da a las preguntas son ajustadas a lo que se pregunta?"]).
 
 % Tipos de respuesta
 tipoRespuesta(1, 'Positiva').
@@ -321,7 +321,7 @@ eleccionAleatoria(LISTA, ELECCION) :-
 		random(0, Length, Index),
 		nth0(Index, LISTA, ELECCION).
 
-% AÃ±ade la pregunta realizada al historico
+% Añade la pregunta realizada al historico
 addPreguntaHistorico(TEXTO_PREGUNTA) :- 
 		retract(historicoPreguntas(L1)), 
 		L2=[TEXTO_PREGUNTA|L1], 
