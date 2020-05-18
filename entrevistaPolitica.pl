@@ -89,9 +89,9 @@ posicionGrupo(atresmedia, izquierda).
 
 % Television
 television(tele5).
-televison(cuatro).
-televison(antena3).
-televison(laSexta).
+television(cuatro).
+television(antena3).
+television(laSexta).
 
 % Radio
 radio(cope).
@@ -107,7 +107,25 @@ prensa(laRazon).
 % Medio
 medio(A) :- television(A).
 medio(A) :- radio(A).
-medio(A) :- radio(A).
+medio(A) :- prensa(A).
+
+% Penetracion por medio
+penetracion(A, Porcentaje) :- radio(A), Porcentaje is 55.70, !.
+penetracion(A, Porcentaje) :- television(A), Porcentaje is 85.90, !.
+penetracion(A, Porcentaje) :- prensa(A), Porcentaje is 20.20, !.
+
+% Audiencia de los medios
+audiencia(tele5, 15.90).
+audiencia(cuatro, 4.90).
+audiencia(antena3, 11.50).
+audiencia(laSexta, 9.10).
+audiencia(cope, 24.40).
+audiencia(cadenaSer, 29.10).
+audiencia(ondaCero, 11.50).
+audiencia(abc, 5.27).
+audiencia(elPais, 11.91).
+audiencia(elMundo, 7.80).
+audiencia(laRazon, 2.30).
 
 % Politicos
 politico(pedroSanchez).
@@ -224,16 +242,19 @@ texto_politico_entrevista :-
 % Finalmente se actualiza la puntuacion en el ranking.
 inicioEntrevista(ID_MEDIO, ID_POLITICO) :- 
 		idMedio(ID_MEDIO, MEDIO),
-		textoMedio(MEDIO, TEXTO_MEDIO), !,
+		textoMedio(MEDIO, TEXTO_MEDIO),
 		format("\nBienvenidos a ~w.", [TEXTO_MEDIO]), 
 		idPolitico(ID_POLITICO, POLITICO),
-		textoPolitico(POLITICO, TEXTO_POLITICO), !,
+		textoPolitico(POLITICO, TEXTO_POLITICO),
 		format(" Hoy vamos a realizar la entrevista a ~w.\n", [TEXTO_POLITICO]),
 		inicioPreguntas(PuntuacionEntrevista),
-		maquillarEntrevista(POLITICO, MEDIO, PuntuacionExtra),
-		calcularPuntuacionFinal(PuntuacionEntrevista, PuntuacionExtra, PuntuacionFinal),
+		calcularExtraMedio(POLITICO, MEDIO, ExtraMedio),
+		calcularExtraAudiencia(POLITICO, MEDIO, ExtraAudiencia),
+%		format("\nPuntuacionEntrevista: ~w, ExtraMedio: ~w, ExtraAudiencia: ~w. \n", [PuntuacionEntrevista, ExtraMedio, ExtraAudiencia]),
+		calcularPuntuacionFinal(PuntuacionEntrevista, ExtraMedio, ExtraAudiencia, PuntuacionFinal),
 		format("\nLa puntuacion final es de: ~w. \n", [PuntuacionFinal]),
-		actualizarPuntuacion(POLITICO, PuntuacionFinal).
+		actualizarPuntuacion(POLITICO, PuntuacionFinal),
+		!.
 
 % Inicia la rueda de preguntas. Se seleccionan x preguntas al azar. 
 % Se calcula la media de las puntuaciones de cada pregunta, lo que dara la puntuacion de la entrevista.
@@ -243,7 +264,8 @@ inicioPreguntas(PuntuacionEntrevista) :-
 		% elegir el numero de preguntas
 		obtenerNumeroDePreguntas(NumPreguntas),
 		lanzarPregunta(NumPreguntas, PuntuacionTotal),
-		PuntuacionEntrevista is div(PuntuacionTotal, NumPreguntas).
+		PuntuacionEntrevista is div(PuntuacionTotal, NumPreguntas),
+		!.
 
 % Se borran las preguntas realizadas al iniciar la entrevista
 inicializarPreguntasRealizadas() :-
@@ -311,16 +333,22 @@ calcularRespuesta(Puntuacion) :-
 		format("La respuesta ha sido ~w. Puntuacion: ~w/100 \n", [TEXTO_RESPUESTA, Puntuacion]).
 
 % Existen 3 tipos: Neutral, Positiva y Negativa. Cada una de ellas te puede dar una puntuacion al azar.
-calcularPuntuacion(Id, Puntuacion) :-
-		Id == 1, random(70, 101, Puntuacion);
-		Id == 2, random(30, 70, Puntuacion);
-		Id == 3, random(0, 30, Puntuacion).
+calcularPuntuacion(ID, Puntuacion) :-
+		ID == 1, random(70, 101, Puntuacion);
+		ID == 2, random(30, 70, Puntuacion);
+		ID == 3, random(0, 30, Puntuacion).
 
-% Se maquilla la puntuacion de la entrevista en base a la afinidad del medio de comunicacion con el lider politico.
+% Se calcula una puntuacion extra de la entrevista en base a la afinidad del medio de comunicacion con el lider politico.
 % La variacion es entre un -20% y un +20%.
-maquillarEntrevista(POLITICO, MEDIO, PUNTUACION_EXTRA) :-
-		esAfin(POLITICO, MEDIO), random(0, 21, Index), PUNTUACION_EXTRA is Index;
-		esAfin(POLITICO, _), random(0, 21, Index), PUNTUACION_EXTRA is -1 * Index.
+calcularExtraMedio(POLITICO, MEDIO, PuntuacionExtra) :-
+		esAfin(POLITICO, MEDIO) -> random(0, 21, Index), PuntuacionExtra is Index;
+		random(0, 21, Index), PuntuacionExtra is -1 * Index.
+
+% Se calcula una puntuacion extra dependiendo de la penetracion y la audiencia del medio de comunicacion.
+% La afinidad entre el medio y el politico tambien importa
+calcularExtraAudiencia(POLITICO, MEDIO, PuntuacionExtra) :-
+		esAfin(POLITICO, MEDIO) -> audiencia(MEDIO, A),	penetracion(MEDIO, B), PuntuacionExtra is ((A/100)*(B/100))*100;
+		audiencia(MEDIO, A), penetracion(MEDIO, B), PuntuacionExtra is -1* (((A/100)*(B/100))*100).
 
 % Se calcula la afinidad del politico con el medio de comunicacion.
 % Se consulta si la posicion politica del grupo al que pertenece el medio de comunicacion 
@@ -334,10 +362,10 @@ esAfin(LIDER_POLITICO, MEDIO_COMUNICACION) :-
 
 % Se calcula la puntuacion final, sumando la puntuacion de la entrevista con la variacion que introduce el medio de comunicacion.
 % En caso de salirse del rango [0, 100], se ajusta.
-calcularPuntuacionFinal(PUNTUACION_ENTREVISTA, PUNTUACION_EXTRA, PuntuacionFinal) :-
-		(PUNTUACION_ENTREVISTA + PUNTUACION_EXTRA) >= 100, PuntuacionFinal is 100;
-		(PUNTUACION_ENTREVISTA + PUNTUACION_EXTRA) =< 0, PuntuacionFinal is 0;
-		PuntuacionFinal is PUNTUACION_ENTREVISTA + PUNTUACION_EXTRA.
+calcularPuntuacionFinal(PUNTUACION_ENTREVISTA, EXTRA_MEDIO, EXTRA_AUDIENCIA, PuntuacionFinal) :-
+		(PUNTUACION_ENTREVISTA + EXTRA_MEDIO + EXTRA_AUDIENCIA) >= 100, PuntuacionFinal is 100;
+		(PUNTUACION_ENTREVISTA + EXTRA_MEDIO + EXTRA_AUDIENCIA) =< 0, PuntuacionFinal is 0;
+		PuntuacionFinal is PUNTUACION_ENTREVISTA + EXTRA_MEDIO + EXTRA_AUDIENCIA.
 
 % Se actualiza la puntuacion en la variable dinamica del politico correspondiente.
 actualizarPuntuacion(POLITICO, PUNTUACION_NEW) :-
@@ -361,7 +389,10 @@ ranking(Ls) :-
 reverseList([], Zs, Zs).
 reverseList([X|Xs], Ys, Zs):- reverseList(Xs, [X|Ys], Zs).
 
+%
 % FUNCIONES AUXILIARES
+% Funciones creadas con el fin de ayudar al desarrollador con el ejercicio
+%
 
 % Imprime por pantalla el historico de preguntas realizadas en la ultima entrevista.
 verPreguntasRealizadas:-
@@ -400,8 +431,4 @@ simulacion(NUMERO_ENTREVISTAS) :-
 		inicioEntrevista(IdMedio, IdPolitico),
 		NUMERO_ENTREVISTAS1 is NUMERO_ENTREVISTAS-1,
 		simulacion(NUMERO_ENTREVISTAS1).
-		
-		
-		
-		
 		
