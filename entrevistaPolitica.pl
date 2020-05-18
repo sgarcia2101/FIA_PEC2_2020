@@ -263,7 +263,8 @@ inicioEntrevista(ID_MEDIO, ID_POLITICO) :-
 		calcularFactorAudiencia(MEDIO, FactorAudiencia),
 %		format("\nPuntuacionEntrevista: ~w, ExtraMedio: ~w, ExtraAudiencia: ~w. \n", [PuntuacionEntrevista, ExtraMedio, ExtraAudiencia]),
 		calcularPuntuacionFinal(PuntuacionEntrevista, ExtraMedio, FactorAudiencia, PuntuacionFinal),
-		format("\nLa puntuacion final es de: ~w. \n", [PuntuacionFinal]),
+		round(PuntuacionFinal, PuntuacionFinalAux, 2),
+		format("\nLa puntuacion final es de: ~w. \n", [PuntuacionFinalAux]),
 		write('\n---------------------------------------------------------\n'),
 		actualizarPuntuacion(POLITICO, PuntuacionFinal),
 		!.
@@ -373,9 +374,9 @@ esAfin(LIDER_POLITICO, MEDIO_COMUNICACION) :-
 % Se calcula la puntuacion final, sumando la puntuacion de la entrevista con la variacion que introduce el medio de comunicacion, aplicando el factor de la audiencia.
 % En caso de salirse del rango [0, 100], se ajusta.
 calcularPuntuacionFinal(PUNTUACION_ENTREVISTA, EXTRA_MEDIO, FACTOR_AUDIENCIA, PuntuacionFinal) :-
-		(PUNTUACION_ENTREVISTA + (EXTRA_MEDIO * FACTOR_AUDIENCIA)) >= 100, PuntuacionFinal is 100;
-		(PUNTUACION_ENTREVISTA + (EXTRA_MEDIO + FACTOR_AUDIENCIA)) =< 0, PuntuacionFinal is 0;
-		PuntuacionFinal is PUNTUACION_ENTREVISTA + (EXTRA_MEDIO + FACTOR_AUDIENCIA).
+		((PUNTUACION_ENTREVISTA + EXTRA_MEDIO) * FACTOR_AUDIENCIA) >= 100, PuntuacionFinal is 100;
+		((PUNTUACION_ENTREVISTA + EXTRA_MEDIO) * FACTOR_AUDIENCIA) =< 0, PuntuacionFinal is 0;
+		PuntuacionFinal is ((PUNTUACION_ENTREVISTA + EXTRA_MEDIO) * FACTOR_AUDIENCIA).
 
 % Se actualiza la puntuacion en la variable dinamica del politico correspondiente.
 actualizarPuntuacion(POLITICO, PUNTUACION_NEW) :-
@@ -400,8 +401,8 @@ reverseList([], Zs, Zs).
 reverseList([X|Xs], Ys, Zs):- reverseList(Xs, [X|Ys], Zs).
 
 %
-% FUNCIONES AUXILIARES
-% Funciones creadas con el fin de ayudar al desarrollador con el ejercicio
+% PREDICADOS AUXILIARES
+% Predicados creados con el fin de ayudar al desarrollador con el ejercicio
 %
 
 % Imprime por pantalla el historico de preguntas realizadas en la ultima entrevista.
