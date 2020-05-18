@@ -203,15 +203,24 @@ clearScreen :- write('\33[2J').
 
 % Inicio del programa
 entrevista:- clearScreen, 
-		texto_medio_entrevista,
+		cabeceraPrograma,
+		textoOpcionesMedios,
 		read(ID_MEDIO),
-		texto_politico_entrevista,
+		textoOpcionesPoliticos,
 		read(ID_POLITICO),
 		clearScreen,
 		inicioEntrevista(ID_MEDIO, ID_POLITICO).
 
+% Predicado para mostrar la cabecera del programa
+cabeceraPrograma :- 
+		write('---------------------------------------------------------\n'),
+		write('-----   CIS (Centro de Invenciones Sintomaticas)   -----.\n'),
+		write('---------------------------------------------------------\n'),
+		write('\n'),
+		write('Seleccione una entrevista para estudiarla:\n\n').
+
 % Predicado para mostrar texto de eleccion del medio de comunicacion
-texto_medio_entrevista :- 
+textoOpcionesMedios :- 
 		write('Introduzca el medio que realizara la entrevista:\n'),
 		write('\n'),
 		write('1.El Pais\n'),
@@ -227,7 +236,7 @@ texto_medio_entrevista :-
         write('11.Cuatro\n').
 	
 % Predicado	para mostrar el texto de eleccion del politico
-texto_politico_entrevista :- 
+textoOpcionesPoliticos :- 
 		write('\nIntroduzca el politico que realizara la entrevista:\n'),
 		write('\n'),
 		write('1.Pedro Sanchez\n'),
@@ -244,6 +253,7 @@ texto_politico_entrevista :-
 inicioEntrevista(ID_MEDIO, ID_POLITICO) :- 
 		idMedio(ID_MEDIO, MEDIO),
 		textoMedio(MEDIO, TEXTO_MEDIO),
+		write('\n---------------------------------------------------------\n'),
 		format("\nBienvenidos a ~w.", [TEXTO_MEDIO]), 
 		idPolitico(ID_POLITICO, POLITICO),
 		textoPolitico(POLITICO, TEXTO_POLITICO),
@@ -254,6 +264,7 @@ inicioEntrevista(ID_MEDIO, ID_POLITICO) :-
 %		format("\nPuntuacionEntrevista: ~w, ExtraMedio: ~w, ExtraAudiencia: ~w. \n", [PuntuacionEntrevista, ExtraMedio, ExtraAudiencia]),
 		calcularPuntuacionFinal(PuntuacionEntrevista, ExtraMedio, FactorAudiencia, PuntuacionFinal),
 		format("\nLa puntuacion final es de: ~w. \n", [PuntuacionFinal]),
+		write('\n---------------------------------------------------------\n'),
 		actualizarPuntuacion(POLITICO, PuntuacionFinal),
 		!.
 
@@ -295,7 +306,7 @@ lanzarPregunta(NumPreguntas, PuntuacionTotal) :-
 		NumPreguntas > 0, 
 		preguntasPosibles(PREGUNTAS_POSIBLES),
 		eleccionAleatoria(PREGUNTAS_POSIBLES, TEXTO_PREGUNTA),
-		format("\nPregunta: ~w \n", [TEXTO_PREGUNTA]),
+		format("\n- Pregunta: ~w \n", [TEXTO_PREGUNTA]),
 		addPreguntaHistorico(TEXTO_PREGUNTA),
 		removePreguntaPosible(TEXTO_PREGUNTA),
 		calcularRespuesta(Puntuacion),
@@ -412,7 +423,7 @@ imprimirPreguntas([P|R])  :- imprimirPreguntas(R), write(P), nl.
 
 % Imprime por pantalla la lista del ranking
 verRanking():-
-		write('\nEste es el ranking actual de politicos:\n\n'),
+		write('\nEsta es la valoracion actual de los politicos:\n\n'),
 		ranking(LISTA),
 		listarRanking(LISTA), nl, !.
 
