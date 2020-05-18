@@ -168,16 +168,17 @@ posicionPartido(ciudadanos, centro).
 
 % Pregunta politicas
 preguntasPoliticas([
-	'Pregunta 1',
-	'Pregunta 2', 
-	'Pregunta 3', 
-	'Pregunta 4', 
-	'Pregunta 5', 
-	'Pregunta 6', 
-	'Pregunta 7', 
-	'Pregunta 8', 
-	'Pregunta 9', 
-	'Pregunta 10']).
+	"¿Qué protocolos tiene su partido ante un apocalipsis zombie?",
+	"¿Qué méritos policiales han hecho merecedor al Cristo de la Buena Muerte de esta medalla? ¿Acudirá el Cristo de la Buena Muerte a recoger dicha condecoración?", 
+	"¿Cuanto peor mejor para todos y cuanto peor para todos mejor, mejor para mí el suyo. Beneficio político?", 
+	"Después del impactante caso del barco de Piolín, ¿le ha comunicado al Gobierno los policías si han visto un lindo gatito por sus pasillos?", 
+	"¿Comparte su partido la opinión del autor sobre que la manzana de Adán y Eva debió ser un albaricoquero, un naranjo amargo, un pomelo o un membrillero, ya que el manzano no es originario de Palestina ni parece que exista asilvestrado en sus montes?", 
+	"¿Piensa interrogar la Guardia Civil a más jóvenes como supuestos miembros del harrypotiano Ejército del Fénix?", 
+	"¿Tiene prevista alguna medida su partido para que el bacalao capturado por la flota española no se sienta discriminado con el de otros países?", 
+	"¿Qué reflexiones personales le han llevado a concluir que el Gobierno de España debe ser llamado Gobierno de España?", 
+	"¿Cree el Gobierno que la película 'A las mujeres les gusta la legión' representa los valores de su partido?", 
+	"¿Tiene presente su partido que se entiende 'Si no tienes vino puedes ir, de verdad, a tomar venganza a tu Ayuntamiento'?",
+	"¿Considera su partido que las respuestas que da a las preguntas son ajustadas a lo que se pregunta?"]).
 
 % Tipos de respuesta
 tipoRespuesta(1, 'Positiva').
