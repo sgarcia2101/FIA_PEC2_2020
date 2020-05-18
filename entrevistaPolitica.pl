@@ -250,9 +250,9 @@ inicioEntrevista(ID_MEDIO, ID_POLITICO) :-
 		format(" Hoy vamos a realizar la entrevista a ~w.\n", [TEXTO_POLITICO]),
 		inicioPreguntas(PuntuacionEntrevista),
 		calcularExtraMedio(POLITICO, MEDIO, ExtraMedio),
-		calcularExtraAudiencia(POLITICO, MEDIO, ExtraAudiencia),
+		calcularFactorAudiencia(MEDIO, FactorAudiencia),
 %		format("\nPuntuacionEntrevista: ~w, ExtraMedio: ~w, ExtraAudiencia: ~w. \n", [PuntuacionEntrevista, ExtraMedio, ExtraAudiencia]),
-		calcularPuntuacionFinal(PuntuacionEntrevista, ExtraMedio, ExtraAudiencia, PuntuacionFinal),
+		calcularPuntuacionFinal(PuntuacionEntrevista, ExtraMedio, FactorAudiencia, PuntuacionFinal),
 		format("\nLa puntuacion final es de: ~w. \n", [PuntuacionFinal]),
 		actualizarPuntuacion(POLITICO, PuntuacionFinal),
 		!.
@@ -345,11 +345,9 @@ calcularExtraMedio(POLITICO, MEDIO, PuntuacionExtra) :-
 		esAfin(POLITICO, MEDIO) -> random(0, 21, Index), PuntuacionExtra is Index;
 		random(0, 21, Index), PuntuacionExtra is -1 * Index.
 
-% Se calcula una puntuacion extra dependiendo de la penetracion y la audiencia del medio de comunicacion.
-% La afinidad entre el medio y el politico tambien importa
-calcularExtraAudiencia(POLITICO, MEDIO, PuntuacionExtra) :-
-		esAfin(POLITICO, MEDIO) -> audiencia(MEDIO, A),	penetracion(MEDIO, B), PuntuacionExtra is ((A/100)*(B/100))*100;
-		audiencia(MEDIO, A), penetracion(MEDIO, B), PuntuacionExtra is -1* (((A/100)*(B/100))*100).
+% Se calcula un factor extra dependiendo de la penetracion y la audiencia del medio de comunicacion.
+calcularFactorAudiencia(MEDIO, Factor) :-
+		audiencia(MEDIO, A), penetracion(MEDIO, B), Factor is 1+((A/100)*(B/100)).
 
 % Se calcula la afinidad del politico con el medio de comunicacion.
 % Se consulta si la posicion politica del grupo al que pertenece el medio de comunicacion 
@@ -361,12 +359,12 @@ esAfin(LIDER_POLITICO, MEDIO_COMUNICACION) :-
 		posicionGrupo(GRUPO_COMUNICACION, POSICION_GRUPO),
 		POSICION_PARTIDO == POSICION_GRUPO.
 
-% Se calcula la puntuacion final, sumando la puntuacion de la entrevista con la variacion que introduce el medio de comunicacion.
+% Se calcula la puntuacion final, sumando la puntuacion de la entrevista con la variacion que introduce el medio de comunicacion, aplicando el factor de la audiencia.
 % En caso de salirse del rango [0, 100], se ajusta.
-calcularPuntuacionFinal(PUNTUACION_ENTREVISTA, EXTRA_MEDIO, EXTRA_AUDIENCIA, PuntuacionFinal) :-
-		(PUNTUACION_ENTREVISTA + EXTRA_MEDIO + EXTRA_AUDIENCIA) >= 100, PuntuacionFinal is 100;
-		(PUNTUACION_ENTREVISTA + EXTRA_MEDIO + EXTRA_AUDIENCIA) =< 0, PuntuacionFinal is 0;
-		PuntuacionFinal is PUNTUACION_ENTREVISTA + EXTRA_MEDIO + EXTRA_AUDIENCIA.
+calcularPuntuacionFinal(PUNTUACION_ENTREVISTA, EXTRA_MEDIO, FACTOR_AUDIENCIA, PuntuacionFinal) :-
+		(PUNTUACION_ENTREVISTA + (EXTRA_MEDIO * FACTOR_AUDIENCIA)) >= 100, PuntuacionFinal is 100;
+		(PUNTUACION_ENTREVISTA + (EXTRA_MEDIO + FACTOR_AUDIENCIA)) =< 0, PuntuacionFinal is 0;
+		PuntuacionFinal is PUNTUACION_ENTREVISTA + (EXTRA_MEDIO + FACTOR_AUDIENCIA).
 
 % Se actualiza la puntuacion en la variable dinamica del politico correspondiente.
 actualizarPuntuacion(POLITICO, PUNTUACION_NEW) :-
